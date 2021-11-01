@@ -7,13 +7,21 @@ import matplotlib
 import random
 import sys
 
-class QubitSystem:
+Hadamard_matrix = (1/math.sqrt(2))*np.array([(1,1), (1,-1)],dtype=np.float)
+NOT_matrix = np.array([(0,1),(1,0)],dtype=np.float)
+square_root_not_matrix = 0.5*np.array([(complex(1,1),complex(1,-1)),(complex(1,-1),complex(1,1))])
+class QubitRegister:
 
     #init_state = initial state
     #n_qubits = number of qubits in the system
     def __init__(self,n_qubits, label='qs X'):
         self.n_qubits = n_qubits
         self.n_states= 2**n_qubits
+        # print(f'0b{self.n_states:b}')
+        #equals to write an 1 to the n qubit number
+        # self.n_states_2 = 1 << n_qubits
+        # print(f'0b{self.n_states_2}')
+
         self.label = label
 
         print("Quantum System Allocated")
@@ -22,81 +30,232 @@ class QubitSystem:
 
         #allocate qubit system as an array of complex numbers
 
-        self.qubits = np.zeros((self.n_states),dtype=np.complex)
+        self.states = np.zeros((self.n_states),dtype=np.complex) #It rapresent the 2^n hilbert state of the qubits in the register
         self.ampli_qubit = np.zeros((self.n_states),dtype=np.float)        
         self.phase_qubit = np.zeros((self.n_states),dtype=np.float)
 
         self.identity_matrix = np.array([(1,0), (0,1)])
+    
     ### Implementaion of the various operations (gate)
     ### Every gate is square unitary matrices.
-    def had_transform(self):
-        '''
-        Apply the hadamard matrix only to all the qubits.
-        '''
-        self.Hadamard_matrix = (1/math.sqrt(2))*np.array([(1,1), (1,-1)],dtype=np.float)
-        self.all_circuit = self.Hadamard_matrix
-
-        for i in range(self.n_qubits -1):
-            self.all_circuit = np.kron(self.Hadamard_matrix,self.all_circuit)
-        #apply hadamard matrix
-        self.qubits = self.all_circuit.dot(self.qubits)
-
-    def had(self,qubit):
-        '''
-        Apply the hadamard matrix only to one qubit.
-        '''
-        if qubit >= self.n_qubits:
-            print("Invalid input. Qubit not present in the system.")
-        self.Hadamard_matrix = (1/math.sqrt(2))*np.array([(1,1), (1,-1)],dtype=np.float)
-        self.all_circuit = self.Hadamard_matrix #self.qubits
-
-        for i in range(self.n_qubits -1):
-            if i == qubit:
-                self.all_circuit = np.kron(self.identity_matrix,self.all_circuit)
-            else:
-                self.all_circuit = np.kron(self.Hadamard_matrix,self.all_circuit)
-
-        #apply hadamard matrix
-        self.qubits = self.all_circuit.dot(self.qubits)
     
-    def NOT(self):
-        self.not_matrix = np.array([(0,1),(1,0)],dtype=np.float)
-        self.all_circuit = self.not_matrix
-        for i in range(self.n_qubits-1):
-            self.all_circuit = np.kron(self.not_matrix,self.all_circuit)
-        self.qubits = self.all_circuit.dot(self.qubits)
+    ### Normal gates ###
+    # def generic_single_Q_gate(self,k,operation):
+    #     """
+    #     Implementation of the algorithm from the paper: https://arxiv.org/pdf/1601.07195.pdf (section2)
+    #     For executiing single-qubit gate operations.
+        
+    #     Arguments:
+    #     k (int): number of qubit in which you want apply the gate
+    #     operation: The gate you want to apply (It must by a 2x2 matrix).
+    #     """
+    #     if k >= self.n_qubits:
+    #         print("Invalid input. Qubit not present in the system. Not executing.")
+    #         sys.exit(0)
+    #     else:
+    #         for g in range(0,self.n_states,2**(k+1)):
+    #             for i in range(g,(g+(2**k)),1):
+    #                 tmp=self.states[i]
+    #                 self.states[i] = operation[0,0]*self.states[i]+operation[0,1]*self.states[i+(2**k)]
+    #                 self.states[i+2**k] = operation[1,0]*tmp+operation[1,1]*self.states[i+(2**k)]
     
-    def square_root_NOT(self):
-        self.square_root_not_matrix = 0.5*np.array([(complex(1,1),complex(1,-1)),(complex(1,-1),complex(1,1))])
-        self.all_circuit = self.square_root_not_matrix
-        for i in range(self.n_qubits-1):
-            self.all_circuit = np.kron(self.square_root_not_matrix,self.all_circuit)
-        self.qubits = self.all_circuit.dot(self.qubits)
-
-    def NOT_one_bit(self,qubit): #TODO: check this function for multiples qubits
-        self.not_matrix = np.array([(0,1),(1,0)],dtype=np.float)
-        self.identity_matrix = np.array([(1,0),(0,1)],dtype=np.float)
-        if (qubit == 0):
-            self.all_circuit = self.not_matrix
-            for i in range(self.n_qubits-1):
-                self.all_circuit = np.kron(self.identity_matrix,self.all_circuit)
+    def generic_Q_gate(self,t, *c, operation):
+        """
+        Implementation of the algorithm from the paper: https://arxiv.org/pdf/1601.07195.pdf (section2)
+        For executiing single-qubit gate operations.
+        
+        Arguments:
+        t (int): number of qubit in which you want apply the gate
+        c (int): control qubit
+        operation: The gate you want to apply (It must by a 2x2 matrix).
+        """
+        
+        #Check if the control qubit are valid
+        for control_qubit in c:
+            if control_qubit >= self.n_qubits:
+                print("Invalid input. Control qubit not present in the system. Not executing.")
+                sys.exit(0)
+        #check if the input qubit is valid
+        if t >= self.n_qubits:
+            print("Invalid input. Qubit not present in the system. Not executing.")
+            sys.exit(0)
         else:
-            self.all_circuit = self.identity_matrix
-            for i in range(qubit-1):
-                self.all_circuit = np.kron(self.identity_matrix,self.all_circuit)
-            self.all_circuit = self.all_circuit = np.kron(self.not_matrix,self.all_circuit)
-            for i in range(qubit,self.n_qubits-1):
-                self.all_circuit = np.kron(self.identity_matrix,self.all_circuit)
-            
-        self.qubits = self.all_circuit.dot(self.qubits)
+            for g in range(0,self.n_states,2**(t+1)):
+                print(f"g:{g}")
+                
+                for i in range(g,(g+(2**t)),1):
+                    
+                    # For every control bit Check the c-th bit of the binary rapresentation of the states to check if it is one
+                    a = i
+                    b = i+2**t
+                    arr = [ (a>>control_qubit) and (b>>control_qubit) for control_qubit in c]
+                    if not arr or any(arr) == 1: # if the control qubit array is empty (hence no control qubit is present) or if the control with the control qubit(s) is true
+                        tmp=self.states[i]
+                        self.states[i] = operation[0,0]*self.states[i]+operation[0,1]*self.states[i+(2**t)]
+                        self.states[i+2**t] = operation[1,0]*tmp+operation[1,1]*self.states[i+(2**t)]
 
-    def P(self, angle):
+    def had(self,qubit_n):
+        '''
+        Apply the hadamard gate only to one qubit of the register.
+        '''
+        self.generic_Q_gate(qubit_n, operation=Hadamard_matrix)
+
+    def NOT(self,qubit_n):
+        '''
+        Apply the NOT gate to one qubit of the register.
+        '''
+        self.generic_Q_gate(qubit_n, operation=NOT_matrix)
+
+    def square_root_NOT(self,qubit_n):
+        '''
+        Apply the NOT gate to one qubit of the register.
+        '''
+        self.generic_Q_gate(qubit_n, operation=square_root_not_matrix)
+
+    def P(self, qubit_n, angle):
         '''
         Corresponds to a rotation on the z-axis of the bloch sphere.
         In the circle notation, this rotation affect only the relative phase 
         of a qubit (hence it is normally seen just in the second sphere in a system with one qubit).
         It does not affect the amplitude.
 
+        Arguments:
+        angle (float): angle in radians.
+        '''
+        phase_matrix = np.array([(1,0),(0,math.e**(complex(0,angle)))])
+
+        self.generic_Q_gate(qubit_n, operation=phase_matrix)
+    
+    def Z(self,qubit_n):
+        '''
+        Curiosity: the Z gate or P(Pi) or P(180degree) is equal to a series of gates -->[H]-->[NOT]-->[H]-- 
+        '''
+        self.P(qubit_n,math.pi)
+
+    def S(self,qubit_n):
+        self.P(qubit_n,math.pi/2)
+
+    def T(self,qubit_n):
+        self.P(qubit_n,math.pi/4)
+
+    def ROTX(self, qubit_n, angle):
+        '''
+        Corresponds to a rotation on the x-axis of the bloch sphere.
+        
+        Arguments:
+        angle (float): angle in radians.
+        qubit_n: the number of the qubit you are applying the gate
+        '''
+        rotx_matrix = np.array([(math.cos(angle/2),-math.sin(complex(0,angle/2))),(-math.sin(complex(0,angle/2)),math.cos(angle/2))])
+
+        self.generic_Q_gate(qubit_n, operation=rotx_matrix)
+    
+    def ROTY(self, qubit_n, angle):
+        '''
+        Corresponds to a rotation on the y-axis of the bloch sphere.
+        
+        Arguments:
+        angle (float): angle in radians.
+        qubit_n: the number of the qubit you are applying the gate
+        '''
+        roty_matrix = np.array([(math.cos(angle/2),-math.sin(angle/2)),(math.sin(angle/2)),math.cos(angle/2)])
+
+        self.generic_Q_gate(qubit_n, operation=roty_matrix)
+
+    ### CONTROLLED GATES ###
+
+    def Chad(self, qubit_n, control_qubits):
+        '''
+        Apply the hadamard gate only to one qubit of the register.
+        '''
+        self.generic_Q_gate(qubit_n, control_qubits, operation=Hadamard_matrix)
+
+    def CNOT(self, qubit_n, control_qubits):
+        '''
+        Apply the NOT gate to one qubit of the register.
+        '''
+        self.generic_Q_gate(qubit_n, control_qubits, operation=NOT_matrix)
+
+    def Csquare_root_NOT(self, qubit_n, control_qubits):
+        '''
+        Apply the NOT gate to one qubit of the register.
+        '''
+        self.generic_Q_gate(qubit_n, control_qubits, operation=square_root_not_matrix)
+
+    def CP(self, qubit_n, control_qubits, angle):
+        '''
+        Corresponds to a rotation on the z-axis of the bloch sphere.
+        In the circle notation, this rotation affect only the relative phase 
+        of a qubit (hence it is normally seen just in the second sphere in a system with one qubit).
+        It does not affect the amplitude.
+
+        Arguments:
+        angle (float): angle in radians.
+        '''
+        phase_matrix = np.array([(1,0),(0,math.e**(complex(0,angle)))])
+
+        self.generic_Q_gate(qubit_n, control_qubits, operation=phase_matrix)
+    
+    def CZ(self, qubit_n, control_qubits):
+        '''
+        Curiosity: the Z gate or P(Pi) or P(180degree) is equal to a series of gates -->[H]-->[NOT]-->[H]-- 
+        '''
+        self.CP(qubit_n,control_qubits, math.pi)
+
+    def CS(self, qubit_n, control_qubits):
+        self.CP(qubit_n,control_qubits, math.pi/2)
+
+    def CT(self, qubit_n, control_qubits):
+        self.CP(qubit_n,control_qubits, math.pi/4)
+
+    def CROTX(self, qubit_n, control_qubits, angle):
+        '''
+        Corresponds to a rotation on the x-axis of the bloch sphere.
+        
+        Arguments:
+        angle (float): angle in radians.
+        qubit_n: the number of the qubit you are applying the gate
+        '''
+        rotx_matrix = np.array([(math.cos(angle/2),-math.sin(complex(0,angle/2))),(-math.sin(complex(0,angle/2)),math.cos(angle/2))])
+
+        self.generic_Q_gate(qubit_n, control_qubits, operation=rotx_matrix)
+    
+    def CROTY(self, qubit_n, control_qubits, angle):
+        '''
+        Corresponds to a rotation on the y-axis of the bloch sphere.
+        
+        Arguments:
+        angle (float): angle in radians.
+        qubit_n: the number of the qubit you are applying the gate
+        '''
+        roty_matrix = np.array([(math.cos(angle/2),-math.sin(angle/2)),(math.sin(angle/2)),math.cos(angle/2)])
+
+        self.generic_Q_gate(qubit_n, control_qubits, operation=roty_matrix)
+
+    ### APPLYING GATE TO ALL THE QUBITS ###
+    def NOT_transform(self):
+        self.all_circuit = NOT_matrix
+        for i in range(self.n_qubits-1):
+            self.all_circuit = np.kron(NOT_matrix,self.all_circuit)
+        self.states = self.all_circuit.dot(self.states)
+
+    def had_transform(self):
+        '''
+        Apply the hadamard matrix only to all the qubits.
+        '''
+        self.all_circuit = Hadamard_matrix
+
+        for i in range(self.n_qubits -1):
+            self.all_circuit = np.kron(Hadamard_matrix,self.all_circuit)
+        #apply hadamard matrix
+        self.states = self.all_circuit.dot(self.states)
+    
+    def P_transform(self, angle):
+        '''
+        Corresponds to a rotation on the z-axis of the bloch sphere.
+        In the circle notation, this rotation affect only the relative phase 
+        of a qubit (hence it is normally seen just in the second sphere in a system with one qubit).
+        It does not affect the amplitude.
 
         Arguments:
         angle (float): angle in radians.
@@ -106,21 +265,21 @@ class QubitSystem:
         self.all_circuit = self.phase_matrix
         for i in range(self.n_qubits-1):
             self.all_circuit = np.kron(self.phase_matrix,self.all_circuit)
-        self.qubits = self.all_circuit.dot(self.qubits)
+        self.states = self.all_circuit.dot(self.states)
     
-    def Z(self):
+    def Z_transform(self):
         '''
         Curiosity: the Z gate or P(Pi) or P(180degree) is equal to a series of gates -->[H]-->[NOT]-->[H]-- 
         '''
-        self.P(math.pi)
+        self.P_transform(math.pi)
 
-    def S(self):
-        self.P(math.pi/2)
+    def S_transform(self):
+        self.P_transform(math.pi/2)
 
-    def T(self):
-        self.P(math.pi/4)
+    def T_transform(self):
+        self.P_transform(math.pi/4)
 
-    def ROTX(self, angle):
+    def ROTX_transform(self, angle):
         '''
         Corresponds to a rotation on the x-axis of the bloch sphere.
         
@@ -132,9 +291,9 @@ class QubitSystem:
         self.all_circuit = self.rotx_matrix
         for i in range(self.n_qubits-1):
             self.all_circuit = np.kron(self.rotx_matrix,self.all_circuit)
-        self.qubits = self.all_circuit.dot(self.qubits)
-
-    def ROTY(self, angle):
+        self.states = self.all_circuit.dot(self.states)
+    
+    def ROTY_transform(self, angle):
         '''
         Corresponds to a rotation on the y-axis of the bloch sphere.
         
@@ -146,13 +305,16 @@ class QubitSystem:
         self.all_circuit = self.roty_matrix
         for i in range(self.n_qubits-1):
             self.all_circuit = np.kron(self.roty_matrix,self.all_circuit)
-        self.qubits = self.all_circuit.dot(self.qubits)
+        self.states = self.all_circuit.dot(self.states)
+
+
+    ###############################################################################
 
 
     # Read the state of the qubits, it "destroy" super position 
     def read(self):
         self.possible_outcome = np.arange(self.n_states)
-        self.prob_qubit = np.square(np.absolute(self.qubits))
+        self.prob_qubit = np.square(np.absolute(self.states))
         #weighted random number generation
         x = random.choices(self.possible_outcome,weights=self.prob_qubit)
         print(f"Read Quantum State = {x}")
@@ -160,7 +322,7 @@ class QubitSystem:
     #to make multiple mesurements and plot
     def read_multiple(self, n_shots=1000):
         self.possible_outcome = np.arange(self.n_states)
-        self.prob_qubit = np.square(np.absolute(self.qubits))
+        self.prob_qubit = np.square(np.absolute(self.states))
         #initialize vector for measurements
         self.measurements_state = np.zeros((self.n_states),dtype=np.int)
         #mesure n_shot times
@@ -183,7 +345,7 @@ class QubitSystem:
             print("Initial state can't represented in the system")
             sys.exit(1)
         #write the state to the qubit system
-        self.qubits[self.init_state]= 1.0
+        self.states[self.init_state]= 1.0
     
     def write_binary(self, binaryString):
         #convert to decimal
@@ -193,17 +355,17 @@ class QubitSystem:
             print("Initial state can't represented in the system")
             sys.exit(1)
         #write the state to the qubit System
-        self.qubits[self.init_state]= 1.0
+        self.states[self.init_state]= 1.0
 
     #circle notation representtation
     def viz2(self):
         # calculate amplitude and phase
         # calculate the amplitude and the phase of the states
 
-        self.prob_qubit = np.absolute(self.qubits)
+        self.prob_qubit = np.absolute(self.states)
         print("Prob = ",self.prob_qubit)
-        self.phase_qubit = np.angle(self.qubits)
-        print("Phase = ",self.prob_qubit)
+        self.phase_qubit = np.angle(self.states)
+        print("Phase = ",self.phase_qubit)
         #viz par
         rows = int(math.ceil(self.n_states /8.0))
         cols = min(self.n_states, 8)
