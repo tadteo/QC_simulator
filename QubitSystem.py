@@ -39,26 +39,6 @@ class QubitRegister:
     ### Implementaion of the various operations (gate)
     ### Every gate is square unitary matrices.
     
-    ### Normal gates ###
-    # def generic_single_Q_gate(self,k,operation):
-    #     """
-    #     Implementation of the algorithm from the paper: https://arxiv.org/pdf/1601.07195.pdf (section2)
-    #     For executiing single-qubit gate operations.
-        
-    #     Arguments:
-    #     k (int): number of qubit in which you want apply the gate
-    #     operation: The gate you want to apply (It must by a 2x2 matrix).
-    #     """
-    #     if k >= self.n_qubits:
-    #         print("Invalid input. Qubit not present in the system. Not executing.")
-    #         sys.exit(0)
-    #     else:
-    #         for g in range(0,self.n_states,2**(k+1)):
-    #             for i in range(g,(g+(2**k)),1):
-    #                 tmp=self.states[i]
-    #                 self.states[i] = operation[0,0]*self.states[i]+operation[0,1]*self.states[i+(2**k)]
-    #                 self.states[i+2**k] = operation[1,0]*tmp+operation[1,1]*self.states[i+(2**k)]
-    
     def generic_Q_gate(self,t, *c, operation):
         """
         Implementation of the algorithm from the paper: https://arxiv.org/pdf/1601.07195.pdf (section2)
@@ -66,11 +46,16 @@ class QubitRegister:
         
         Arguments:
         t (int): number of qubit in which you want apply the gate
-        c (int): control qubit
+        c (int): control qubits (they can be 0, 1 or multiple)
         operation: The gate you want to apply (It must by a 2x2 matrix).
         """
         
         #Check if the control qubit are valid
+        
+        #flattening the control qubits
+        c=np.asarray(c)
+        c= c.flatten()
+        print(f"C = {c}")
         for control_qubit in c:
             if control_qubit >= self.n_qubits:
                 print("Invalid input. Control qubit not present in the system. Not executing.")
@@ -88,8 +73,17 @@ class QubitRegister:
                     # For every control bit Check the c-th bit of the binary rapresentation of the states to check if it is one
                     a = i
                     b = i+2**t
-                    arr = [ (a>>control_qubit) and (b>>control_qubit) for control_qubit in c]
-                    if not arr or any(arr) == 1: # if the control qubit array is empty (hence no control qubit is present) or if the control with the control qubit(s) is true
+                    exec = True
+                    for control_qubit in c:
+                        # print(f"ARR:{a:b},{a>>control_qubit}:{b:b},{b>>control_qubit} - c:{control_qubit}:{exec}")
+                        if (a>>control_qubit)&1 and (b>>control_qubit)&1:
+                            continue
+                        else:
+                            exec = False
+                            break
+                        
+
+                    if exec: # if the control qubit array is empty (hence no control qubit is present) or if the control with the control qubit(s) is true
                         tmp=self.states[i]
                         self.states[i] = operation[0,0]*self.states[i]+operation[0,1]*self.states[i+(2**t)]
                         self.states[i+2**t] = operation[1,0]*tmp+operation[1,1]*self.states[i+(2**t)]
@@ -164,25 +158,25 @@ class QubitRegister:
 
     ### CONTROLLED GATES ###
 
-    def Chad(self, qubit_n, control_qubits):
+    def Chad(self, qubit_n, *control_qubits):
         '''
         Apply the hadamard gate only to one qubit of the register.
         '''
         self.generic_Q_gate(qubit_n, control_qubits, operation=Hadamard_matrix)
 
-    def CNOT(self, qubit_n, control_qubits):
+    def CNOT(self, qubit_n, *control_qubits):
         '''
         Apply the NOT gate to one qubit of the register.
         '''
         self.generic_Q_gate(qubit_n, control_qubits, operation=NOT_matrix)
 
-    def Csquare_root_NOT(self, qubit_n, control_qubits):
+    def Csquare_root_NOT(self, qubit_n, *control_qubits):
         '''
         Apply the NOT gate to one qubit of the register.
         '''
         self.generic_Q_gate(qubit_n, control_qubits, operation=square_root_not_matrix)
 
-    def CP(self, qubit_n, control_qubits, angle):
+    def CP(self, qubit_n, *control_qubits, angle):
         '''
         Corresponds to a rotation on the z-axis of the bloch sphere.
         In the circle notation, this rotation affect only the relative phase 
@@ -196,19 +190,19 @@ class QubitRegister:
 
         self.generic_Q_gate(qubit_n, control_qubits, operation=phase_matrix)
     
-    def CZ(self, qubit_n, control_qubits):
+    def CZ(self, qubit_n, *control_qubits):
         '''
         Curiosity: the Z gate or P(Pi) or P(180degree) is equal to a series of gates -->[H]-->[NOT]-->[H]-- 
         '''
-        self.CP(qubit_n,control_qubits, math.pi)
+        self.CP(qubit_n, control_qubits, angle=math.pi)
 
-    def CS(self, qubit_n, control_qubits):
-        self.CP(qubit_n,control_qubits, math.pi/2)
+    def CS(self, qubit_n, *control_qubits):
+        self.CP(qubit_n, control_qubits, angle=math.pi/2)
 
-    def CT(self, qubit_n, control_qubits):
-        self.CP(qubit_n,control_qubits, math.pi/4)
+    def CT(self, qubit_n, *control_qubits):
+        self.CP(qubit_n, control_qubits, angle=math.pi/4)
 
-    def CROTX(self, qubit_n, control_qubits, angle):
+    def CROTX(self, qubit_n, *control_qubits, angle):
         '''
         Corresponds to a rotation on the x-axis of the bloch sphere.
         
@@ -220,7 +214,7 @@ class QubitRegister:
 
         self.generic_Q_gate(qubit_n, control_qubits, operation=rotx_matrix)
     
-    def CROTY(self, qubit_n, control_qubits, angle):
+    def CROTY(self, qubit_n, *control_qubits, angle):
         '''
         Corresponds to a rotation on the y-axis of the bloch sphere.
         
@@ -231,6 +225,17 @@ class QubitRegister:
         roty_matrix = np.array([(math.cos(angle/2),-math.sin(angle/2)),(math.sin(angle/2)),math.cos(angle/2)])
 
         self.generic_Q_gate(qubit_n, control_qubits, operation=roty_matrix)
+
+    def SWAP(self, qubit_a, qubit_b):
+        self.CNOT(qubit_a, qubit_b)
+        self.CNOT(qubit_b, qubit_a)
+        self.CNOT(qubit_a, qubit_b)
+    
+    def CSWAP(self, qubit_a, qubit_b, *control_qubits):
+        
+        self.CNOT(qubit_a, control_qubits+(qubit_b,))
+        self.CNOT(qubit_b, control_qubits+(qubit_a,))
+        self.CNOT(qubit_a, control_qubits+(qubit_b,))
 
     ### APPLYING GATE TO ALL THE QUBITS ###
     def NOT_transform(self):
@@ -310,6 +315,52 @@ class QubitRegister:
 
     ###############################################################################
 
+    ### More complex Operators implementation ####
+
+    def increment(self):
+        index = [i for i in range(self.n_qubits)]
+        print(f"Index {index}")
+        for i in range(self.n_qubits-1,-1,-1):
+            print(f"Control qubits {index[:i]}, i: {i}")
+            if(i==0):
+                self.NOT(i)
+            else:
+                self.CNOT(i, index[:i])
+
+    def decrement(self):
+        index = [i for i in range(self.n_qubits)]
+        print(f"Index {index}")
+        for i in range(0,self.n_qubits):
+            print(f"Control qubits {index[:i]}, i: {i}")
+            if(i==0):
+                self.NOT(i)
+            else:
+                self.CNOT(i, index[:i])
+
+    def mirror(self):
+        "Also known as Grover iteration"
+        l=[i for i in range(self.n_qubits)]
+        self.had_transform()
+        self.NOT_transform()
+        self.CZ(0, l[1:])
+        self.NOT_transform()
+        self.had_transform()
+    
+    ### Utils ###
+
+    def get_NAA(self):
+        """
+        Return the Number of Amplitude Aplifications needed to maximize the 
+        probability
+        """
+        return math.floor(math.pi*math.sqrt(self.n_states)/4)
+    
+    def get_NAA_multiple_markers(self,m):
+        """
+        Return the Number of Amplitude Aplifications needed to maximize the 
+        probability
+        """
+        return math.floor((math.pi/4)*math.sqrt(self.n_states/m))
 
     # Read the state of the qubits, it "destroy" super position 
     def read(self):
