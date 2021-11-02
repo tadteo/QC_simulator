@@ -14,7 +14,7 @@ def bell_circuit():
     qsA.CNOT(1,0)
     qsA.viz2()
 
-if __name__ == '__main__':
+def foo():
     qsA = qs.QubitRegister(4, "register A")
     # qsA.write(3)
     qsA.write_binary('0000')
@@ -35,13 +35,21 @@ if __name__ == '__main__':
         qsA.NOT(3)
         qsA.mirror()
         qsA.viz2()
-    # qsA.increment()
-    # qsA.had_transform()
-    # # # qsA.P(math.pi/2)
-    # # # qsA.had_transform()
-    # qsA.viz2()
-    # qsA.CP(0,2,math.pi/3)
 
+if __name__ == '__main__':
+    qsA = qs.QubitRegister(6, "register A")
+    # qsA.write(3)
+    qsA.write_binary('00000000')
+    # print(qsA.qubits)
+    qsA.had_transform()
+
+    # qsA.viz2()
+    qsA.Z(4)
+    
+    # qsA.read_multiple()
+    # qsA.viz2()
+    qsA.QFT()
+    # qsA.viz2()
     # # # qsA.had(1)
     # # # qsA.square_root_NOT()
     # # # qsA.square_root_NOT()
@@ -53,6 +61,11 @@ if __name__ == '__main__':
     # # qsA.viz2()
     # # # qsA.CNOT(1,0)
     # qsA.viz2()
-    # # # qsA.read_multiple()
+    qsA.read_multiple(10000)
+
+    qsA.IQFT()
+    qsA.viz2()
+    qsA.read_multiple(10000)
+
     # # bell_circuit()
 

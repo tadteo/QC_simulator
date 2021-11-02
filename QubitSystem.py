@@ -55,7 +55,7 @@ class QubitRegister:
         #flattening the control qubits
         c=np.asarray(c)
         c= c.flatten()
-        print(f"C = {c}")
+        # print(f"C = {c}")
         for control_qubit in c:
             if control_qubit >= self.n_qubits:
                 print("Invalid input. Control qubit not present in the system. Not executing.")
@@ -66,7 +66,7 @@ class QubitRegister:
             sys.exit(0)
         else:
             for g in range(0,self.n_states,2**(t+1)):
-                print(f"g:{g}")
+                # print(f"g:{g}")
                 
                 for i in range(g,(g+(2**t)),1):
                     
@@ -345,6 +345,46 @@ class QubitRegister:
         self.CZ(0, l[1:])
         self.NOT_transform()
         self.had_transform()
+
+    def QFT(self):
+        """
+        Implementation of the Quantum Fourier Tranform (QFT) algorithm.
+        """
+        for i in reversed(range(self.n_qubits)):
+            # print(f"QFT AAAAAA: {i}")
+            self.had(i)
+            n=1
+            for j in reversed(range(i)):
+                # print(f"QFT BBBBBB: {i},{j}")
+                self.CP(i,j,angle=-math.pi/(2*n))
+                n +=1
+            # self.viz2()
+        
+        for i in range(math.floor(self.n_qubits/2)):
+            # print(f"QFT: i: {i}, self.n_qubits-i: {self.n_qubits-1-i}")
+            self.SWAP(i,self.n_qubits-1-i)
+        # self.viz2()
+    
+    def IQFT(self):
+        """
+        Implementation of the Inverted QFT method
+        """
+        for i in range(math.floor(self.n_qubits/2),self.n_qubits):
+            # print(f"QFT: i: {i}, self.n_qubits-i: {self.n_qubits-1-i}")
+            self.SWAP(i,self.n_qubits-1-i)
+
+        for i in range(self.n_qubits):
+            # print(f"QFT AAAAAA: {i}")
+            self.had(i)
+            n=1
+            for j in range(i):
+                # print(f"QFT BBBBBB: {i},{j}")
+                self.CP(i,j,angle=-math.pi/(2*n))
+                n +=1
+            # self.viz2()
+        
+        
+        # self.viz2()
     
     ### Utils ###
 
@@ -420,9 +460,9 @@ class QubitRegister:
         #viz par
         rows = int(math.ceil(self.n_states /8.0))
         cols = min(self.n_states, 8)
-        print(type(rows),rows,type(cols),cols)
+        # print(type(rows),rows,type(cols),cols)
         fig, axs = plt.subplots(rows, cols,squeeze=False)
-        print(type(axs[0]),axs[0])
+        # print(type(axs[0]),axs[0])
         for row in range(rows):
             for col in range(cols):
                 #amplitude area

@@ -199,6 +199,41 @@ class TestIncrementDecrement(unittest.TestCase):
                 self.assertAlmostEqual(qubit_system.phase_qubit[i],math.pi/4,msg=f"The phase should be {math.pi/4}")
         else:
             self.assertAlmostEqual(qubit_system.prob_qubit[i],0,msg=f"The {i}-qubit prob should be 0.")
-        
+
+class TestQFT(unittest.TestCase):
+    # Only use setUp() and tearDown() if necessary
+
+    def setUp(self):
+        print("\n\n")
+            
+    def test_QFT(self):
+        print(f"\n\nTesting QFT Circuit. Initial input '0001'")
+        qubit_system = qs.QubitRegister(4,"Control Phase")
+        qubit_system.write_binary('0000')
+        # qubit_system.viz2()
+        qubit_system.had_transform()
+        # qubit_system.viz2()
+        # qubit_system.P(0,angle=math.pi/4)
+        # qubit_system.P(1,angle=math.pi/2)
+        qubit_system.P(0,angle=math.pi/4)
+        qubit_system.P(1,angle=math.pi/2)
+        qubit_system.P(2,angle=math.pi)
+        # qubit_system.viz2()
+        # qubit_system.increment()
+        # qubit_system.viz2()
+
+        qubit_system.QFT()
+
+        qubit_system.prob_qubit = np.absolute(qubit_system.states)
+        print("Prob = ",qubit_system.prob_qubit)
+        qubit_system.phase_qubit = np.angle(qubit_system.states)
+        print("Phase = ",qubit_system.phase_qubit)
+        for i in range(qubit_system.n_states):
+            if(i == 2):
+                self.assertAlmostEqual(qubit_system.prob_qubit[i],1,msg=f"The {i}-qubit prob should be 1")
+                self.assertAlmostEqual(qubit_system.phase_qubit[i],0,msg=f"The {i}-phase should be 0")
+            else:
+                self.assertAlmostEqual(qubit_system.prob_qubit[i],0,msg=f"The {i}-qubit prob should be 0.")
+      
 if __name__ == '__main__':
     unittest.main()
