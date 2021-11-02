@@ -364,6 +364,31 @@ class QubitRegister:
             # print(f"QFT: i: {i}, self.n_qubits-i: {self.n_qubits-1-i}")
             self.SWAP(i,self.n_qubits-1-i)
         # self.viz2()
+
+    def QFT_partial_register(self,initial_qubit, final_qubit):
+        """
+        Implementation of the Quantum Fourier Tranform (QFT) algorithm.
+        """
+        if(final_qubit < initial_qubit):
+            print("FINAL QUBIT < INITIAL QUBIT. Invalid")
+            sys.exit(0)
+
+        for i in reversed(range(initial_qubit,final_qubit)):
+            print(f"QFT AAAAAA: {i}")
+            self.had(i)
+            n=1
+            for j in reversed(range(initial_qubit,i)):
+                print(f"QFT BBBBBB: {i},{j}")
+                self.CP(i,j,angle=-math.pi/(2*n))
+                n +=1
+            # self.viz2()
+        
+        # self.viz2()
+        print(range(initial_qubit,math.floor((final_qubit-initial_qubit)/2)))
+        for i in range(initial_qubit,initial_qubit+math.floor((final_qubit-initial_qubit)/2)):
+            print(f"QFT: i: {i}, self.n_qubits-i: {final_qubit-1-i+initial_qubit}")
+            self.SWAP(i,final_qubit-1-i+initial_qubit)
+        # self.viz2()
     
     def IQFT(self):
         """
@@ -458,8 +483,12 @@ class QubitRegister:
         self.phase_qubit = np.angle(self.states)
         print("Phase = ",self.phase_qubit)
         #viz par
-        rows = int(math.ceil(self.n_states /8.0))
-        cols = min(self.n_states, 8)
+        if(self.n_states>64):
+            n_cols = 16
+        else:
+            n_cols = 8
+        rows = int(math.ceil(self.n_states /float(n_cols)))
+        cols = min(self.n_states, n_cols)
         # print(type(rows),rows,type(cols),cols)
         fig, axs = plt.subplots(rows, cols,squeeze=False)
         # print(type(axs[0]),axs[0])
@@ -467,14 +496,14 @@ class QubitRegister:
             for col in range(cols):
                 #amplitude area
                 circleExt = matplotlib.patches.Circle((0.5,0.5), 0.5, color='gray',alpha=0.25)
-                circleInt = matplotlib.patches.Circle((0.5,0.5), self.prob_qubit[(row*8)+col]/2, color='b', alpha=0.3)
+                circleInt = matplotlib.patches.Circle((0.5,0.5), self.prob_qubit[(row*n_cols)+col]/2, color='b', alpha=0.3)
                 axs[row][col].add_patch(circleExt)
                 axs[row][col].add_patch(circleInt)
                 axs[row][col].set_aspect('equal')
-                state_number = "|" + str((row*8)+col) + ">"
+                state_number = "|" + str((row*n_cols)+col) + ">"
                 axs[row][col].set_title(state_number)
-                x1 = [0.5, 0.5 + 0.5*self.prob_qubit[(row*8)+col]*math.cos(self.phase_qubit[(row*8)+col] + np.pi/2)]
-                y1 = [0.5, 0.5 + 0.5*self.prob_qubit[(row*8)+col]*math.sin(self.phase_qubit[(row*8)+col] + np.pi/2)]
+                x1 = [0.5, 0.5 + 0.5*self.prob_qubit[(row*n_cols)+col]*math.cos(self.phase_qubit[(row*n_cols)+col] + np.pi/2)]
+                y1 = [0.5, 0.5 + 0.5*self.prob_qubit[(row*n_cols)+col]*math.sin(self.phase_qubit[(row*n_cols)+col] + np.pi/2)]
 
                 axs[row][col].plot(x1,y1,'r')
                 axs[row][col].axis('off')
