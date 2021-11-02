@@ -48,6 +48,10 @@ def shorQPU(N,precision_bits, coprime=2):
 
     #qft
     quantum_register.QFT_partial_register(precision_bits,2*precision_bits)
+    
+    ##### FROM PAGE 40 of SLIDES
+    
+    
     quantum_register.viz2()
 
 def shor(N, precision_bits, coprime=2):
