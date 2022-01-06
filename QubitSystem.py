@@ -374,11 +374,11 @@ class QubitRegister:
             sys.exit(0)
 
         for i in reversed(range(initial_qubit,final_qubit)):
-            print(f"QFT AAAAAA: {i}")
+            # print(f"QFT AAAAAA: {i}")
             self.had(i)
             n=1
             for j in reversed(range(initial_qubit,i)):
-                print(f"QFT BBBBBB: {i},{j}")
+                # print(f"QFT BBBBBB: {i},{j}")
                 self.CP(i,j,angle=-math.pi/(2*n))
                 n +=1
             # self.viz2()
@@ -386,7 +386,7 @@ class QubitRegister:
         # self.viz2()
         print(range(initial_qubit,math.floor((final_qubit-initial_qubit)/2)))
         for i in range(initial_qubit,initial_qubit+math.floor((final_qubit-initial_qubit)/2)):
-            print(f"QFT: i: {i}, self.n_qubits-i: {final_qubit-1-i+initial_qubit}")
+            # print(f"QFT: i: {i}, self.n_qubits-i: {final_qubit-1-i+initial_qubit}")
             self.SWAP(i,final_qubit-1-i+initial_qubit)
         # self.viz2()
     
@@ -434,6 +434,7 @@ class QubitRegister:
         #weighted random number generation
         x = random.choices(self.possible_outcome,weights=self.prob_qubit)
         print(f"Read Quantum State = {x}")
+        return x[0]
 
     #to make multiple mesurements and plot
     def read_multiple(self, n_shots=1000):
