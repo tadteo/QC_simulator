@@ -98,11 +98,30 @@ def shor(N, precision_bits, coprime=2):
     return [factor1, factor2]
 
 def main():
-    N= 45
-    precision_bits=6
+    import time
+    N=32 
+    precision_bits=1
     coprime =2
     
-    results = shor(N,precision_bits, coprime)
+    elapsed_time =[]
+    n = [2*x for x in range(2,10)]
+    print(n)
+    for i in range(2,10):
+        precision_bits=i
+        
+        # count time of execution of set of instructions    
+        start_time = time.time()
+        results = shor(N,precision_bits, coprime)
+        end_time = time.time()
+        print(i, end_time - start_time)
+        elapsed_time.append(end_time-start_time)
+    #plot the times of execution of the QFT algorithm
+    plt.plot(n,elapsed_time, 'ro')
+    plt.xlabel('number of qubits')
+    plt.ylabel('time of execution')
+    plt.show()
+    
+    
     print(f"The factors of {N} are: {results}")
 
 if __name__ == "__main__":

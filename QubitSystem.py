@@ -415,14 +415,14 @@ class QubitRegister:
 
     def get_NAA(self):
         """
-        Return the Number of Amplitude Aplifications needed to maximize the 
+        Return the Number of Amplitude Amplifications needed to maximize the 
         probability
         """
         return math.floor(math.pi*math.sqrt(self.n_states)/4)
     
     def get_NAA_multiple_markers(self,m):
         """
-        Return the Number of Amplitude Aplifications needed to maximize the 
+        Return the Number of Amplitude Amplifications needed to maximize the 
         probability
         """
         return math.floor((math.pi/4)*math.sqrt(self.n_states/m))
